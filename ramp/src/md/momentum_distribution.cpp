@@ -22,15 +22,17 @@ namespace md
 {
 
 MomentumDistribution::MomentumDistribution(int num_joints, int num_limbs)
-: num_joints_(num_joints), num_limbs_(num_limbs)
+: kNumJoints_(num_joints), kNumLimbs_(num_limbs)
 {
-  int max_rows = 6 * num_limbs_;
+  int max_rows = 6 * kNumLimbs_;
 
   A_matrix_.resize(6, 6);
-  S_inv_buffer_.resize(num_joints_, max_rows);
 
-  // Force the SVD solver to reserve internal buffers using dummy matrices
-  Eigen::MatrixXd dummy_J = Eigen::MatrixXd::Zero(max_rows, num_joints_);
+  int max_singular_values = std::min(kNumJoints_, max_rows);
+  S_inv_buffer_.resize(max_singular_values);
+
+  // HACK: Force the SVD solver to reserve internal buffers using dummy matrices
+  Eigen::MatrixXd dummy_J = Eigen::MatrixXd::Zero(max_rows, kNumJoints_);
   svd_.compute(dummy_J, Eigen::ComputeThinU | Eigen::ComputeThinV);
 }
 
@@ -41,19 +43,19 @@ VelocityCommand MomentumDistribution::computeVelocities(
 {
   VelocityCommand cmd;
 
+  // Eigen::MatrixXd J_m_pinv = J_m_sup.completeOrthogonalDecomposition().pseudoInverse();
   Eigen::MatrixXd J_m_pinv =
     computePseudoInverseAdaptiveDLS(J_m_sup, dls_params.max_lambda, dls_params.epsilon);
-  // Eigen::MatrixXd J_m_pinv = J_m_sup.completeOrthogonalDecomposition().pseudoInverse();
 
-  // A = H_b - H_bm_sup * J_m_sup^+ * J_b_sup
+  // A = H_b - H_{bm_sup} * J_{m_sup}^+ * J_{b_sup}
   A_matrix_ = H_b - H_bm_sup * J_m_pinv * J_b_sup;
-  // b = -alpha * L_swing
+  // b = -alpha * L_{swing}
   Eigen::VectorXd b = L_swing;
-  // (A * dx_b = b)
-  // dx_b = A^(-1) * b
+  // (A * d{x}_b = b)
+  // d{x}_b = A^(-1) * b
   cmd.base_velocity = -alpha * A_matrix_.colPivHouseholderQr().solve(b);
 
-  /// dq_{sup} = -J_{m_sup}^+ * J_{b_sup} * dx_b
+  /// d{q}_{sup} = -J_{m_sup}^+ * J_{b_sup} * d{x}_b
   cmd.support_limb_joint_velocities = -J_m_pinv * J_b_sup * cmd.base_velocity;
 
   return cmd;
@@ -66,11 +68,9 @@ Eigen::MatrixXd MomentumDistribution::computePseudoInverseAdaptiveDLS(
   svd_.compute(J, Eigen::ComputeThinU | Eigen::ComputeThinV);
 
   const Eigen::VectorXd & singular_values = svd_.singularValues();
+  int k = singular_values.size();
 
-  // Clear only the necessary area to zero and use the buffer
-  S_inv_buffer_.setZero();
-
-  for (int i = 0; i < singular_values.size(); ++i) {
+  for (int i = 0; i < k; ++i) {
     double sigma = singular_values(i);
     double lambda = 0.0;
 
@@ -80,13 +80,11 @@ Eigen::MatrixXd MomentumDistribution::computePseudoInverseAdaptiveDLS(
     }
 
     // sigma / (sigma^2 + lambda^2)
-    S_inv_buffer_(i, i) = sigma / (sigma * sigma + lambda * lambda);
+    S_inv_buffer_(i) = sigma / (sigma * sigma + lambda * lambda);
   }
 
-  int k = singular_values.size();
-
   // J^+ = V * S_{inv} * U^T
-  return svd_.matrixV() * S_inv_buffer_.block(0, 0, k, k) * svd_.matrixU().transpose();
+  return svd_.matrixV() * S_inv_buffer_.head(k).asDiagonal() * svd_.matrixU().transpose();
 }
 
 }  // namespace md

@@ -52,12 +52,11 @@ private:
   Eigen::MatrixXd computePseudoInverseAdaptiveDLS(
     const Eigen::MatrixXd & J, double max_lambda, double epsilon);
 
-  int num_joints_;
-  int num_limbs_;
+  const int kNumJoints_;
+  const int kNumLimbs_;
 
   Eigen::MatrixXd A_matrix_;
-  Eigen::MatrixXd S_inv_buffer_;
-
+  Eigen::VectorXd S_inv_buffer_;
   Eigen::JacobiSVD<Eigen::MatrixXd> svd_;
 };
 
