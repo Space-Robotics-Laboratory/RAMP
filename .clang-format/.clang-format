@@ -62,12 +62,12 @@ UseTab: Never
 # Include
 IncludeBlocks: Regroup
 IncludeCategories:
-  # Headers containing "momentum_distribution"
-  - Regex: ".*momentum_distribution.*"
+  # Headers containing "ramp"
+  - Regex: ".*ramp.*"
     Priority: 5
     CaseSensitive: true
-  # Headers containing "momentum_distribution"
-  - Regex: <.*momentum_distribution.*>
+  # Headers containing "ramp"
+  - Regex: <.*ramp.*>
     Priority: 5
     CaseSensitive: true
   # Project's headers

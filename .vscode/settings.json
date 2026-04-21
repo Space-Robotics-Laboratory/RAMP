@@ -15,7 +15,15 @@
     "files.trimTrailingWhitespace": false
   },
   // Code Spell Checker setting
-  "cSpell.ignoreWords": [],
+  "cSpell.ignoreWords": [
+    "Eigen",
+    "GNUCXX",
+    "Imai",
+    "Masazumi",
+    "pinv",
+    "Wextra",
+    "Wpedantic"
+  ],
   "cmake.ignoreCMakeListsMissing": true,
   "editor.formatOnSave": true,
   "editor.hover.delay": 600,
@@ -38,13 +46,5 @@
     "/opt/ros/humble/local/lib/python3.10/dist-packages"
   ],
   "ros.distro": "humble",
-  "cSpell.words": [
-    "Eigen",
-    "GNUCXX",
-    "Imai",
-    "Masazumi",
-    "pinv",
-    "Wextra",
-    "Wpedantic"
-  ]
+  "cSpell.words": []
 }
