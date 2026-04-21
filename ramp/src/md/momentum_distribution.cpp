@@ -16,6 +16,8 @@
 
 #include <iostream>
 
+#define DEBUG false
+
 namespace ramp
 {
 namespace md
@@ -74,6 +76,11 @@ VelocityCommand MomentumDistribution::computeVelocities(
 
   // Whole-body joint angular velocity vector
   cmd.joint_velocities = dq_sup + dq_sw;
+
+#if DEBUG
+  Eigen::VectorXd L = H_b * cmd.base_velocity + H_bm * cmd.joint_velocities;
+  std::cout << "L = " << L.transpose() << std::endl;
+#endif  // DEBUG
 
   return cmd;
 }
