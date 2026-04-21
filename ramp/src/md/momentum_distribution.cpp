@@ -37,26 +37,43 @@ MomentumDistribution::MomentumDistribution(int num_joints, int num_limbs)
 }
 
 VelocityCommand MomentumDistribution::computeVelocities(
-  const Eigen::MatrixXd & H_b, const Eigen::MatrixXd & H_bm_sup, const Eigen::MatrixXd & J_b_sup,
-  const Eigen::MatrixXd & J_m_sup, const Eigen::VectorXd & L_swing, double alpha,
+  const Eigen::MatrixXd & H_b, const Eigen::MatrixXd & H_bm, const Eigen::MatrixXd & J_b_support,
+  const Eigen::MatrixXd & J_m_support, const Eigen::MatrixXd & J_b_swing,
+  const Eigen::MatrixXd & J_m_swing, const Eigen::VectorXd & v_swing_ee_des, double alpha,
   const AdaptiveDLSParams & dls_params)
 {
   VelocityCommand cmd;
 
-  // Eigen::MatrixXd J_m_pinv = J_m_sup.completeOrthogonalDecomposition().pseudoInverse();
-  Eigen::MatrixXd J_m_pinv =
-    computePseudoInverseAdaptiveDLS(J_m_sup, dls_params.max_lambda, dls_params.epsilon);
+  double max_lambda = dls_params.max_lambda;
+  double epsilon = dls_params.epsilon;
 
-  // A = H_b - H_{bm_sup} * J_{m_sup}^+ * J_{b_sup}
-  A_matrix_ = H_b - H_bm_sup * J_m_pinv * J_b_sup;
-  // b = -alpha * L_{swing}
-  Eigen::VectorXd b = L_swing;
-  // (A * d{x}_b = b)
-  // d{x}_b = A^(-1) * b
-  cmd.base_velocity = -alpha * A_matrix_.colPivHouseholderQr().solve(b);
+  Eigen::MatrixXd J_m_sw_pinv = computePseudoInverseAdaptiveDLS(J_m_swing, max_lambda, epsilon);
 
-  /// d{q}_{sup} = -J_{m_sup}^+ * J_{b_sup} * d{x}_b
-  cmd.support_limb_joint_velocities = -J_m_pinv * J_b_sup * cmd.base_velocity;
+  // "Nominal" joint velocities of the swing limb  // HACK: Assuming the base is fixed
+  Eigen::VectorXd dq_sw_nom = J_m_sw_pinv * v_swing_ee_des;
+
+  // "Nominal" momenta of the swing limb
+  Eigen::VectorXd L_sw_nom = H_bm * dq_sw_nom;
+
+  // Modified base inertia matrix  // HACK: Take into account the coupled momentum of the swing limbs
+  Eigen::MatrixXd H_b_modified = H_b - alpha * H_bm * J_m_sw_pinv * J_b_swing;
+
+  Eigen::MatrixXd J_m_sup_pinv = computePseudoInverseAdaptiveDLS(J_m_support, max_lambda, epsilon);
+
+  // A = H_{b_modified} - H_{bm} * J_{m_sup}^+ * J_{b_sup}
+  A_matrix_ = H_b_modified - H_bm * J_m_sup_pinv * J_b_support;
+
+  // d{x}_b = -alpha * A^(-1) * L_{sw}
+  cmd.base_velocity = -alpha * A_matrix_.colPivHouseholderQr().solve(L_sw_nom);
+
+  // d{q}_{sup} = -J_{m_sup}^+ * J_{b_sup} * d{x}_b
+  Eigen::VectorXd dq_sup = -J_m_sup_pinv * J_b_support * cmd.base_velocity;
+
+  // "Actual" joint angular velocity of the swing limbs
+  Eigen::VectorXd dq_sw = J_m_sw_pinv * (v_swing_ee_des - J_b_swing * cmd.base_velocity);
+
+  // Whole-body joint angular velocity vector
+  cmd.joint_velocities = dq_sup + dq_sw;
 
   return cmd;
 }
