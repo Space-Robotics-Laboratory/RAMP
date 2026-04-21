@@ -16,13 +16,23 @@
   },
   // Code Spell Checker setting
   "cSpell.ignoreWords": [
+    "BOBYQA",
+    "buildtool",
     "Eigen",
+    "FBML",
     "GNUCXX",
     "Imai",
+    "libeigen",
+    "libnlopt",
+    "LRST",
     "Masazumi",
+    "NLopt",
     "pinv",
+    "schematypens",
+    "SLSQP",
     "Wextra",
-    "Wpedantic"
+    "Wpedantic",
+    "xtol"
   ],
   "cmake.ignoreCMakeListsMissing": true,
   "editor.formatOnSave": true,
