@@ -31,18 +31,22 @@ struct VelocityCommand
   Eigen::VectorXd support_limb_joint_velocities;
 };
 
-class MomentumDistribution
+struct AdaptiveDLSParams
+{
+  double max_lambda = 0.1;
+  double epsilon = 0.05;
+};
+
+class RAMP_PUBLIC MomentumDistribution
 {
 public:
-  RAMP_PUBLIC
   explicit MomentumDistribution(int num_joints, int num_limbs);
   virtual ~MomentumDistribution() = default;
 
-  RAMP_PUBLIC
   VelocityCommand computeVelocities(
     const Eigen::MatrixXd & H_b, const Eigen::MatrixXd & H_bm_sup, const Eigen::MatrixXd & J_b_sup,
     const Eigen::MatrixXd & J_m_sup, const Eigen::VectorXd & L_swing, double alpha = 1.0,
-    double max_lambda = 0.1, double epsilon = 0.05);
+    const AdaptiveDLSParams & dls_params = AdaptiveDLSParams());
 
 private:
   Eigen::MatrixXd computePseudoInverseAdaptiveDLS(

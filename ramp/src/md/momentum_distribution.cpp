@@ -36,12 +36,13 @@ MomentumDistribution::MomentumDistribution(int num_joints, int num_limbs)
 
 VelocityCommand MomentumDistribution::computeVelocities(
   const Eigen::MatrixXd & H_b, const Eigen::MatrixXd & H_bm_sup, const Eigen::MatrixXd & J_b_sup,
-  const Eigen::MatrixXd & J_m_sup, const Eigen::VectorXd & L_swing, double alpha, double max_lambda,
-  double epsilon)
+  const Eigen::MatrixXd & J_m_sup, const Eigen::VectorXd & L_swing, double alpha,
+  const AdaptiveDLSParams & dls_params)
 {
   VelocityCommand cmd;
 
-  Eigen::MatrixXd J_m_pinv = computePseudoInverseAdaptiveDLS(J_m_sup, max_lambda, epsilon);
+  Eigen::MatrixXd J_m_pinv =
+    computePseudoInverseAdaptiveDLS(J_m_sup, dls_params.max_lambda, dls_params.epsilon);
   // Eigen::MatrixXd J_m_pinv = J_m_sup.completeOrthogonalDecomposition().pseudoInverse();
 
   // A = H_b - H_bm_sup * J_m_sup^+ * J_b_sup
