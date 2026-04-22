@@ -23,20 +23,6 @@ namespace ramp
 namespace lrst
 {
 
-// Helper function for calculating the factorial (nCr)
-double nChoosek(int n, int k)
-{
-  if (k > n) return 0;
-  if (k * 2 > n) k = n - k;
-  if (k == 0) return 1;
-  double result = n;
-  for (int i = 2; i <= k; ++i) {
-    result *= (n - i + 1);
-    result /= i;
-  }
-  return result;
-}
-
 LowReactionSwingTrajectory::LowReactionSwingTrajectory(int num_joints, int num_limbs)
 : num_joints_(num_joints), num_limbs_(num_limbs)
 {
@@ -135,6 +121,24 @@ Eigen::MatrixXd LowReactionSwingTrajectory::optimizeTrajectory(
   return P_opt;
 }
 
+namespace
+{
+// Helper function for calculating the factorial (nCr)
+double computeBinomialCoefficient(int n, int k)
+{
+  if (k > n) return 0.0;
+  if (k * 2 > n) k = n - k;
+  if (k == 0) return 1.0;
+
+  double result = n;
+  for (int i = 2; i <= k; ++i) {
+    result *= (n - i + 1);
+    result /= i;
+  }
+  return result;
+}
+}  // namespace
+
 Eigen::Vector3d LowReactionSwingTrajectory::computeBezierPosition(
   double t, const Eigen::MatrixXd & P) const
 {
@@ -143,7 +147,8 @@ Eigen::Vector3d LowReactionSwingTrajectory::computeBezierPosition(
   int m = bezier_order_;
 
   for (int i = 0; i <= m; ++i) {
-    double b = nChoosek(m, i) * std::pow(t / tf, i) * std::pow((tf - t) / tf, m - i);
+    double b =
+      computeBinomialCoefficient(m, i) * std::pow(t / tf, i) * std::pow((tf - t) / tf, m - i);
     pos += b * P.col(i);
   }
   return pos;
@@ -159,7 +164,8 @@ Eigen::Vector3d LowReactionSwingTrajectory::computeBezierVelocity(
 
   // Differentiation formula for Bézier curves
   for (int i = 0; i <= m - 1; ++i) {
-    double b = nChoosek(m - 1, i) * std::pow(t / tf, i) * std::pow((tf - t) / tf, m - 1 - i);
+    double b = computeBinomialCoefficient(m - 1, i) * std::pow(t / tf, i) *
+      std::pow((tf - t) / tf, m - 1 - i);
     vel += b * (static_cast<double>(m) / tf) * (P.col(i + 1) - P.col(i));
   }
   return vel;
