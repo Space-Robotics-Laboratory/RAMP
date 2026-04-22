@@ -49,10 +49,10 @@ struct WeightParams
 };
 
 using IKSolverCallback =
-  std::function<bool(Eigen::VectorXd & q, const Eigen::Isometry3d & pose_des)>;
+  std::function<bool (Eigen::VectorXd & q, const Eigen::Isometry3d & pose_des)>;
 
 using CouplingInertiaCallback =
-  std::function<void(const Eigen::VectorXd & q, Eigen::MatrixXd & H_bm)>;
+  std::function<void (const Eigen::VectorXd & q, Eigen::MatrixXd & H_bm)>;
 
 class RAMP_PUBLIC LowReactionSwingTrajectory
 {

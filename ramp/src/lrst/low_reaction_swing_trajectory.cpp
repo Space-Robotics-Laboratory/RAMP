@@ -23,7 +23,8 @@ namespace ramp
 namespace lrst
 {
 
-LowReactionSwingTrajectory::LowReactionSwingTrajectory(int num_joints) : kNumJoints_(num_joints)
+LowReactionSwingTrajectory::LowReactionSwingTrajectory(int num_joints)
+: kNumJoints_(num_joints)
 {
 }
 
@@ -77,7 +78,7 @@ Eigen::MatrixXd LowReactionSwingTrajectory::optimizeTrajectory(
   }
   if (!is_boundary_set_ || !is_robot_state_set_) {
     throw std::runtime_error(
-      "[LRST] Error: Boundary conditions or Robot state were not updated for this step!");
+            "[LRST] Error: Boundary conditions or Robot state were not updated for this step!");
   }
 
   std::cout << "[LRST] Optimizing trajectory..." << std::endl;
@@ -94,7 +95,7 @@ Eigen::MatrixXd LowReactionSwingTrajectory::optimizeTrajectory(
 
   // Initial optimization variable x0
   std::vector<double> initial_guess = {mid_pos.x(), mid_pos.y(), mid_pos.z(),
-                                       mid_pos.x(), mid_pos.y(), mid_pos.z()};
+    mid_pos.x(), mid_pos.y(), mid_pos.z()};
 
   unsigned int num_vars = initial_guess.size();
 
@@ -147,9 +148,9 @@ namespace
 // Helper function for calculating the factorial (nCr)
 double computeBinomialCoefficient(int n, int k)
 {
-  if (k > n) return 0.0;
-  if (k * 2 > n) k = n - k;
-  if (k == 0) return 1.0;
+  if (k > n) {return 0.0;}
+  if (k * 2 > n) {k = n - k;}
+  if (k == 0) {return 1.0;}
 
   double result = n;
   for (int i = 2; i <= k; ++i) {
@@ -221,7 +222,7 @@ double LowReactionSwingTrajectory::computeCost(const std::vector<double> & x)
   // Discrete-time loop
   for (int i = 0; i < num_steps; ++i) {
     double t = i * dt;
-    if (t > tf) t = tf;
+    if (t > tf) {t = tf;}
 
     Eigen::Vector3d x_des = computeBezierPosition(t, P);
 
