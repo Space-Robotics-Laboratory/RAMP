@@ -63,9 +63,13 @@ void LowReactionSwingTrajectory::setBoundaryConditions(
   bezier_base_matrix_.col(7) = end_pos;
 }
 
-void LowReactionSwingTrajectory::setCallbacks(IKSolverCallback ik_cb, DynamicsCallback dyn_cb)
+void LowReactionSwingTrajectory::setIKSolverCallback(IKSolverCallback ik_cb)
 {
   ik_callback_ = std::move(ik_cb);
+}
+
+void LowReactionSwingTrajectory::setDynamicsCallback(DynamicsCallback dyn_cb)
+{
   dynamics_callback_ = std::move(dyn_cb);
 }
 

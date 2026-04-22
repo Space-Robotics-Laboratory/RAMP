@@ -63,7 +63,9 @@ public:
 
   void setBoundaryConditions(const Eigen::Vector3d & start_pos, const Eigen::Vector3d & end_pos);
 
-  void setCallbacks(IKSolverCallback ik_cb, DynamicsCallback dyn_cb);
+  void setIKSolverCallback(IKSolverCallback ik_cb);
+
+  void setDynamicsCallback(DynamicsCallback dyn_cb);
 
   void setRobotState(
     const Eigen::VectorXd & q_init, const Eigen::Matrix3d & initial_swing_rotation);
