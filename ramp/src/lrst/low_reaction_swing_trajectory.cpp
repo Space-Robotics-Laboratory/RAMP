@@ -45,6 +45,8 @@ void LowReactionSwingTrajectory::setBoundaryConditions(
   bezier_base_matrix_.col(5) = end_pos;
   bezier_base_matrix_.col(6) = end_pos;
   bezier_base_matrix_.col(7) = end_pos;
+
+  is_boundary_set_ = true;
 }
 
 void LowReactionSwingTrajectory::setIKSolverCallback(IKSolverCallback ik_cb)
@@ -59,15 +61,25 @@ void LowReactionSwingTrajectory::setCouplingInertiaCallback(
 }
 
 void LowReactionSwingTrajectory::setRobotState(
-  const Eigen::VectorXd & q_init, const Eigen::Matrix3d & initial_swing_rotation)
+  const Eigen::VectorXd & q_init, const Eigen::Matrix3d & initial_swing_ee_orientation)
 {
   q_init_ = q_init;
-  initial_swing_rotation_ = initial_swing_rotation;
+  init_sw_ee_ori_ = initial_swing_ee_orientation;
+
+  is_robot_state_set_ = true;
 }
 
 Eigen::MatrixXd LowReactionSwingTrajectory::optimizeTrajectory(
   const SolverParams & solver_params, const WeightParams & weight_params)
 {
+  if (!ik_callback_ || !coupling_inertia_callback_) {
+    throw std::runtime_error("[LRST] Error: Callbacks are not set!");
+  }
+  if (!is_boundary_set_ || !is_robot_state_set_) {
+    throw std::runtime_error(
+      "[LRST] Error: Boundary conditions or Robot state were not updated for this step!");
+  }
+
   std::cout << "[LRST] Optimizing trajectory..." << std::endl;
 
   solver_params_ = solver_params;
@@ -111,6 +123,9 @@ Eigen::MatrixXd LowReactionSwingTrajectory::optimizeTrajectory(
   } catch (std::exception & e) {
     std::cerr << "[LRST] NLopt failed: " << e.what() << std::endl;
   }
+
+  is_boundary_set_ = false;
+  is_robot_state_set_ = false;
 
   Eigen::MatrixXd P_opt = bezier_base_matrix_;
   P_opt.col(3) = Eigen::Vector3d(x_opt[0], x_opt[1], x_opt[2]);
@@ -174,11 +189,6 @@ Eigen::Vector3d LowReactionSwingTrajectory::computeBezierVelocity(
 
 double LowReactionSwingTrajectory::computeCost(const std::vector<double> & x)
 {
-  if (!ik_callback_ || !coupling_inertia_callback_) {
-    std::cerr << "[LRST] Error: Callbacks are not set!" << std::endl;
-    return 1e9;
-  }
-
   // Complete the Bézier curve control point matrix P (3x8) using the optimization variable x (6 elements)
   Eigen::MatrixXd P = bezier_base_matrix_;
   P.col(3) = Eigen::Vector3d(x[0], x[1], x[2]);
@@ -198,7 +208,7 @@ double LowReactionSwingTrajectory::computeCost(const std::vector<double> & x)
   Eigen::VectorXd q_prev = q_init_;
   Eigen::VectorXd L_prev = Eigen::VectorXd::Zero(6);
 
-  Eigen::Matrix3d R_des = initial_swing_rotation_;
+  Eigen::Matrix3d R_des = init_sw_ee_ori_;
 
   // Discrete-time loop
   for (int i = 0; i < num_steps; ++i) {

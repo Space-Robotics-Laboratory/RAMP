@@ -67,7 +67,8 @@ public:
   void setCouplingInertiaCallback(CouplingInertiaCallback coupling_inertia_cb);
 
   void setRobotState(
-    const Eigen::VectorXd & q_init, const Eigen::Matrix3d & initial_swing_rotation);
+    const Eigen::VectorXd & q_init,
+    const Eigen::Matrix3d & initial_swing_ee_orientation = Eigen::Matrix3d::Identity());
 
   Eigen::MatrixXd optimizeTrajectory(
     const SolverParams & solver_params, const WeightParams & weight_params);
@@ -82,11 +83,11 @@ private:
   static double objectiveWrapper(
     const std::vector<double> & x, std::vector<double> & grad, void * data);
 
-  SolverParams solver_params_;
-  WeightParams weight_params_;
-
   static constexpr int kBezierOrder_ = 7;
   Eigen::Matrix<double, 3, kBezierOrder_ + 1> bezier_base_matrix_;
+
+  SolverParams solver_params_;
+  WeightParams weight_params_;
 
   const int kNumJoints_;
 
@@ -94,7 +95,10 @@ private:
   CouplingInertiaCallback coupling_inertia_callback_;
 
   Eigen::VectorXd q_init_;
-  Eigen::Matrix3d initial_swing_rotation_;  // TODO:
+  Eigen::Matrix3d init_sw_ee_ori_;
+
+  bool is_boundary_set_ = false;
+  bool is_robot_state_set_ = false;
 };
 
 }  // namespace lrst
