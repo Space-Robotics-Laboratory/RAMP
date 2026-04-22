@@ -119,9 +119,17 @@ Eigen::MatrixXd LowReactionSwingTrajectory::optimizeTrajectory(
 
   try {
     opt.optimize(x_opt, min_cost);
+
+    if (min_cost >= 1e8) {
+      throw std::runtime_error("Optimizer could not find a kinematically feasible trajectory.");
+    }
+
     std::cout << "[LRST] Optimization successful. Minimum cost: " << min_cost << std::endl;
   } catch (std::exception & e) {
     std::cerr << "[LRST] NLopt failed: " << e.what() << std::endl;
+    is_boundary_set_ = false;
+    is_robot_state_set_ = false;
+    return Eigen::MatrixXd();
   }
 
   is_boundary_set_ = false;
