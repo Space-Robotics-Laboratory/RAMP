@@ -148,9 +148,15 @@ namespace
 // Helper function for calculating the factorial (nCr)
 double computeBinomialCoefficient(int n, int k)
 {
-  if (k > n) {return 0.0;}
-  if (k * 2 > n) {k = n - k;}
-  if (k == 0) {return 1.0;}
+  if (k > n) {
+    return 0.0;
+  }
+  if (k * 2 > n) {
+    k = n - k;
+  }
+  if (k == 0) {
+    return 1.0;
+  }
 
   double result = n;
   for (int i = 2; i <= k; ++i) {
@@ -198,7 +204,8 @@ Eigen::Vector3d LowReactionSwingTrajectory::computeBezierVelocity(
 
 double LowReactionSwingTrajectory::computeCost(const std::vector<double> & x)
 {
-  // Complete the Bézier curve control point matrix P (3x8) using the optimization variable x (6 elements)
+  // Complete the Bézier curve control point matrix P (3x8)
+  // using the optimization variable x (6 elements)
   Eigen::MatrixXd P = bezier_base_matrix_;
   P.col(3) = Eigen::Vector3d(x[0], x[1], x[2]);
   P.col(4) = Eigen::Vector3d(x[3], x[4], x[5]);
@@ -222,7 +229,9 @@ double LowReactionSwingTrajectory::computeCost(const std::vector<double> & x)
   // Discrete-time loop
   for (int i = 0; i < num_steps; ++i) {
     double t = i * dt;
-    if (t > tf) {t = tf;}
+    if (t > tf) {
+      t = tf;
+    }
 
     Eigen::Vector3d x_des = computeBezierPosition(t, P);
 
@@ -286,12 +295,15 @@ double LowReactionSwingTrajectory::computeCost(const std::vector<double> & x)
 double LowReactionSwingTrajectory::objectiveWrapper(
   const std::vector<double> & x, std::vector<double> & grad, void * data)
 {
-  // NOTE: In the case of algorithms that do not require gradients (LN_BOBYQA), grad is called in an empty state (no computation required).
+  // NOTE: In the case of algorithms that do not require gradients (LN_BOBYQA),
+  // grad is called in an empty state (no computation required).
   if (!grad.empty()) {
-    // NOTE: For algorithms that require a gradient (such as LD_SLSQP), you need to write code here to compute the numerical derivative yourself.
+    // NOTE: For algorithms that require a gradient (such as LD_SLSQP),
+    // you need to write code here to compute the numerical derivative yourself.
   }
 
-  // Cast void pointer to instance of LowReactionSwingTrajectory and call actual calculation function
+  // Cast void pointer to instance of LowReactionSwingTrajectory and
+  // call actual calculation function
   LowReactionSwingTrajectory * optimizer = static_cast<LowReactionSwingTrajectory *>(data);
   return optimizer->computeCost(x);
 }

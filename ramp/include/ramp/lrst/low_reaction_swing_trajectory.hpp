@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef RAMP__MD__LOW_REACTION_SWING_TRAJECTORY_HPP_
-#define RAMP__MD__LOW_REACTION_SWING_TRAJECTORY_HPP_
+#ifndef RAMP__LRST__LOW_REACTION_SWING_TRAJECTORY_HPP_
+#define RAMP__LRST__LOW_REACTION_SWING_TRAJECTORY_HPP_
 
 #include <Eigen/Dense>
 #include <functional>
@@ -104,4 +104,4 @@ private:
 }  // namespace lrst
 }  // namespace ramp
 
-#endif  // RAMP__MD__LOW_REACTION_SWING_TRAJECTORY_HPP_
+#endif  // RAMP__LRST__LOW_REACTION_SWING_TRAJECTORY_HPP_

@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef RAMP__VISIBILITY_CONTROL_HPP_
-#define RAMP__VISIBILITY_CONTROL_HPP_
+#ifndef RAMP__VISIBILITY_CONTROL_H_
+#define RAMP__VISIBILITY_CONTROL_H_
 
 // This logic was borrowed (then namespaced) from the examples on the gcc wiki:
 //     https://gcc.gnu.org/wiki/Visibility
@@ -46,4 +46,4 @@
 #define RAMP_PUBLIC_TYPE
 #endif
 
-#endif  // RAMP__VISIBILITY_CONTROL_HPP_
+#endif  // RAMP__VISIBILITY_CONTROL_H_

@@ -51,13 +51,15 @@ VelocityCommand MomentumDistribution::computeVelocities(
 
   Eigen::MatrixXd J_m_sw_pinv = computePseudoInverseAdaptiveDLS(J_m_swing, max_lambda, epsilon);
 
-  // "Nominal" joint velocities of the swing limb  // HACK: Assuming the base is fixed
+  // "Nominal" joint velocities of the swing limb
+  // HACK: Assuming the base is fixed
   Eigen::VectorXd dq_sw_nom = J_m_sw_pinv * v_swing_ee_des;
 
   // "Nominal" momenta of the swing limb
   Eigen::VectorXd L_sw_nom = H_bm * dq_sw_nom;
 
-  // Modified base inertia matrix  // HACK: Take into account the coupled momentum of the swing limbs
+  // Modified base inertia matrix
+  // HACK: Take into account the coupled momentum of the swing limbs
   Eigen::MatrixXd H_b_modified = H_b - alpha * H_bm * J_m_sw_pinv * J_b_swing;
 
   Eigen::MatrixXd J_m_sup_pinv = computePseudoInverseAdaptiveDLS(J_m_support, max_lambda, epsilon);
