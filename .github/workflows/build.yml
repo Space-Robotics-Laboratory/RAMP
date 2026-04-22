@@ -1,0 +1,37 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    name: Build on Ubuntu (ROS 2 Humble)
+    runs-on: ubuntu-22.04
+
+    container:
+      image: ros:humble-ros-base
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          path: src/ramp
+
+      - name: Install dependencies
+        run: |
+          apt-get update
+          apt-get install -y libeigen3-dev libnlopt-cxx-dev
+
+      - name: Build the package
+        run: |
+          . /opt/ros/humble/setup.sh
+          colcon build --packages-select ramp --cmake-args -DCMAKE_BUILD_TYPE=Release
+
+      - name: Run tests (Linting)
+        run: |
+          . /opt/ros/humble/setup.sh
+          colcon test --packages-select ramp
+          colcon test-result --all
