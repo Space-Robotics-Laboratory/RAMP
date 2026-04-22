@@ -52,8 +52,8 @@ struct WeightParams
 using IKSolverCallback =
   std::function<bool(Eigen::VectorXd & q, const Eigen::Isometry3d & pose_des)>;
 
-using DynamicsCallback =
-  std::function<void(const Eigen::VectorXd & q, Eigen::MatrixXd & H_b, Eigen::MatrixXd & H_bm)>;
+using CouplingInertiaCallback =
+  std::function<void(const Eigen::VectorXd & q, Eigen::MatrixXd & H_bm)>;
 
 class RAMP_PUBLIC LowReactionSwingTrajectory
 {
@@ -65,7 +65,7 @@ public:
 
   void setIKSolverCallback(IKSolverCallback ik_cb);
 
-  void setDynamicsCallback(DynamicsCallback dyn_cb);
+  void setCouplingInertiaCallback(CouplingInertiaCallback coupling_inertia_cb);
 
   void setRobotState(
     const Eigen::VectorXd & q_init, const Eigen::Matrix3d & initial_swing_rotation);
@@ -93,7 +93,7 @@ private:
   int num_limbs_;
 
   IKSolverCallback ik_callback_;
-  DynamicsCallback dynamics_callback_;
+  CouplingInertiaCallback coupling_inertia_callback_;
 
   Eigen::VectorXd q_init_;
   Eigen::Matrix3d initial_swing_rotation_;  // TODO:

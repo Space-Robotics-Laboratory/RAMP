@@ -68,9 +68,10 @@ void LowReactionSwingTrajectory::setIKSolverCallback(IKSolverCallback ik_cb)
   ik_callback_ = std::move(ik_cb);
 }
 
-void LowReactionSwingTrajectory::setDynamicsCallback(DynamicsCallback dyn_cb)
+void LowReactionSwingTrajectory::setCouplingInertiaCallback(
+  CouplingInertiaCallback coupling_inertia_cb)
 {
-  dynamics_callback_ = std::move(dyn_cb);
+  coupling_inertia_callback_ = std::move(coupling_inertia_cb);
 }
 
 void LowReactionSwingTrajectory::setRobotState(
@@ -166,7 +167,7 @@ Eigen::Vector3d LowReactionSwingTrajectory::computeBezierVelocity(
 
 double LowReactionSwingTrajectory::computeCost(const std::vector<double> & x)
 {
-  if (!ik_callback_ || !dynamics_callback_) {
+  if (!ik_callback_ || !coupling_inertia_callback_) {
     std::cerr << "[LRST] Error: Callbacks are not set!" << std::endl;
     return 1e9;
   }
@@ -220,8 +221,8 @@ double LowReactionSwingTrajectory::computeCost(const std::vector<double> & x)
       q_dot = (q.tail(num_joints_) - q_prev.tail(num_joints_)) / dt;
     }
 
-    Eigen::MatrixXd H_b, H_bm;
-    dynamics_callback_(q, H_b, H_bm);
+    Eigen::MatrixXd H_bm;
+    coupling_inertia_callback_(q, H_bm);
 
     // HACK: Momentum of the swing limb
     Eigen::VectorXd L = H_bm * q_dot;
