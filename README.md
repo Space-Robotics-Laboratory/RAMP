@@ -34,7 +34,7 @@ RAMP uses a Dependency Injection (Callback) architecture. You need to provide th
 
 Example: TBA
 
-## Citing RAMP
+## Citation
 
 To cite RAMP in your academic publication, please use the following BibTeX entry:
 
@@ -63,3 +63,9 @@ To cite LRST (Low-Reaction Swing Trajectory), please use the following BibTeX en
   organization={IEEE}
 }
 ```
+
+## Authors and Maintainers
+
+- [Masazumi Imai](https://masazumiimai.github.io/)
+- [Warley F. R. Ribeiro](https://www.ribeirowarley.com/)
+- [Kentaro Uno](https://kentarouno.github.io/)
