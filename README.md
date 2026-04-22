@@ -1,5 +1,7 @@
 # RAMP: Reaction-Aware Motion Planning
 
+![Build](https://github.com/MasazumiImai/RAMP/actions/workflows/build.yml/badge.svg)
+
 This is a pure C++ library for locomotion of multi-limbed articulated robots, providing reaction-aware trajectory optimization and momentum distribution algorithms.
 
 ## Features
