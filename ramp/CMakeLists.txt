@@ -12,10 +12,6 @@ find_package(Eigen3 REQUIRED)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(NLOPT REQUIRED nlopt)
 
-set(COAL_DISABLE_HPP_FCL_WARNINGS ON)
-find_package(pinocchio REQUIRED)
-find_package(fbml REQUIRED)
-
 # add library
 add_library(${PROJECT_NAME} SHARED
   src/lrst/low_reaction_swing_trajectory.cpp
@@ -33,17 +29,12 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 target_link_libraries(${PROJECT_NAME}
   Eigen3::Eigen
   ${NLOPT_LIBRARIES}
-  pinocchio::pinocchio
 )
-
-ament_target_dependencies(${PROJECT_NAME} fbml)
 
 # export dependencies
 ament_export_targets(export_${PROJECT_NAME})
 ament_export_dependencies(
   Eigen3
-  pinocchio
-  fbml
 )
 
 # install rules

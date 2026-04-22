@@ -20,7 +20,6 @@
 #include <vector>
 
 #include <nlopt.hpp>
-#include <pinocchio/spatial/se3.hpp>
 
 #include "ramp/visibility_control.h"
 

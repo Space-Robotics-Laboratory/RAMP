@@ -12,9 +12,6 @@
   <depend>libeigen3-dev</depend>
   <depend>libnlopt-cxx-dev</depend>
 
-  <depend>pinocchio</depend>
-  <depend>fbml</depend>
-
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
 

@@ -19,7 +19,6 @@
     "BOBYQA",
     "buildtool",
     "Eigen",
-    "FBML",
     "GNUCXX",
     "Imai",
     "libeigen",
