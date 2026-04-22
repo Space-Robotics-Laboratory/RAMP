@@ -23,16 +23,14 @@ namespace ramp
 namespace lrst
 {
 
-LowReactionSwingTrajectory::LowReactionSwingTrajectory(int num_joints, int num_limbs)
-: num_joints_(num_joints), num_limbs_(num_limbs)
+LowReactionSwingTrajectory::LowReactionSwingTrajectory(int num_joints) : kNumJoints_(num_joints)
 {
 }
 
 void LowReactionSwingTrajectory::setBoundaryConditions(
   const Eigen::Vector3d & start_pos, const Eigen::Vector3d & end_pos)
 {
-  constexpr int kDof = 3;
-  bezier_base_matrix_ = Eigen::MatrixXd::Zero(kDof, bezier_order_ + 1);
+  bezier_base_matrix_.setZero();
 
   // Constraints for start point
   bezier_base_matrix_.col(0) = start_pos;
@@ -144,7 +142,7 @@ Eigen::Vector3d LowReactionSwingTrajectory::computeBezierPosition(
 {
   Eigen::Vector3d pos = Eigen::Vector3d::Zero();
   double tf = solver_params_.step_duration;
-  int m = bezier_order_;
+  int m = kBezierOrder_;
 
   for (int i = 0; i <= m; ++i) {
     double b =
@@ -159,8 +157,11 @@ Eigen::Vector3d LowReactionSwingTrajectory::computeBezierVelocity(
 {
   Eigen::Vector3d vel = Eigen::Vector3d::Zero();
   double tf = solver_params_.step_duration;
-  int m = bezier_order_;
-  if (t >= tf) return vel;
+  int m = kBezierOrder_;
+
+  if (t >= tf) {
+    return vel;
+  }
 
   // Differentiation formula for Bézier curves
   for (int i = 0; i <= m - 1; ++i) {
@@ -189,8 +190,7 @@ double LowReactionSwingTrajectory::computeCost(const std::vector<double> & x)
 
   double max_force = 0.0;
   double max_moment = 0.0;
-  double sum_force = 0.0;
-  double max_height = -1e9;
+  double max_height = 0.0;
   double sum_height = 0.0;
 
   double ground_z = P(2, 0);
@@ -222,16 +222,15 @@ double LowReactionSwingTrajectory::computeCost(const std::vector<double> & x)
       return 1e9;  // High penalty for kinematic infeasible pose
     }
 
-    Eigen::VectorXd q_dot = Eigen::VectorXd::Zero(num_joints_);
+    Eigen::VectorXd q_dot = Eigen::VectorXd::Zero(kNumJoints_);
     if (i > 0) {
-      q_dot = (q.tail(num_joints_) - q_prev.tail(num_joints_)) / dt;
+      q_dot = (q.tail(kNumJoints_) - q_prev.tail(kNumJoints_)) / dt;
     }
 
     Eigen::MatrixXd H_bm;
     coupling_inertia_callback_(q, H_bm);
 
-    // HACK: Momentum of the swing limb
-    Eigen::VectorXd L = H_bm * q_dot;
+    Eigen::VectorXd L = H_bm * q_dot;  // Swing limb momentum
 
     if (i > 0) {
       // Differential of momentum
@@ -242,14 +241,12 @@ double LowReactionSwingTrajectory::computeCost(const std::vector<double> & x)
 
       max_force = std::max(max_force, force_norm);
       max_moment = std::max(max_moment, moment_norm);
-      sum_force += force_norm;
     }
 
     q_prev = q;
     L_prev = L;
   }
 
-  // double mean_force = sum_force / (num_steps - 1);
   double mean_height = sum_height / num_steps;
 
   // === Costs ===

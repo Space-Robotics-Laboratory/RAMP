@@ -57,7 +57,7 @@ using CouplingInertiaCallback =
 class RAMP_PUBLIC LowReactionSwingTrajectory
 {
 public:
-  explicit LowReactionSwingTrajectory(int num_joints, int num_limbs);
+  explicit LowReactionSwingTrajectory(int num_joints);
   virtual ~LowReactionSwingTrajectory() = default;
 
   void setBoundaryConditions(const Eigen::Vector3d & start_pos, const Eigen::Vector3d & end_pos);
@@ -85,11 +85,10 @@ private:
   SolverParams solver_params_;
   WeightParams weight_params_;
 
-  const int bezier_order_ = 7;
-  Eigen::MatrixXd bezier_base_matrix_;
+  static constexpr int kBezierOrder_ = 7;
+  Eigen::Matrix<double, 3, kBezierOrder_ + 1> bezier_base_matrix_;
 
-  int num_joints_;
-  int num_limbs_;
+  const int kNumJoints_;
 
   IKSolverCallback ik_callback_;
   CouplingInertiaCallback coupling_inertia_callback_;
