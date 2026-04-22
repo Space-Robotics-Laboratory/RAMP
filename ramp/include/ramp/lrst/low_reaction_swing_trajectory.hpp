@@ -16,15 +16,13 @@
 #define RAMP__MD__LOW_REACTION_SWING_TRAJECTORY_HPP_
 
 #include <Eigen/Dense>
-#include <string>
+#include <functional>
 #include <vector>
 
-#include "ramp/visibility_control.h"
-
-#include <fbml/dynamics.hpp>
-#include <fbml/kinematics.hpp>
 #include <nlopt.hpp>
 #include <pinocchio/spatial/se3.hpp>
+
+#include "ramp/visibility_control.h"
 
 namespace ramp
 {
@@ -51,30 +49,37 @@ struct WeightParams
   double step_height_ave = 1.0;
 };
 
+using IKSolverCallback =
+  std::function<bool(Eigen::VectorXd & q, const Eigen::Isometry3d & pose_des)>;
+
+using DynamicsCallback =
+  std::function<void(const Eigen::VectorXd & q, Eigen::MatrixXd & H_b, Eigen::MatrixXd & H_bm)>;
+
 class RAMP_PUBLIC LowReactionSwingTrajectory
 {
 public:
-  explicit LowReactionSwingTrajectory(
-    fbml::Kinematics * kinematics, fbml::Dynamics * dynamics, int num_joints, int num_limbs);
+  explicit LowReactionSwingTrajectory(int num_joints, int num_limbs);
   virtual ~LowReactionSwingTrajectory() = default;
+
+  void setBoundaryConditions(const Eigen::Vector3d & start_pos, const Eigen::Vector3d & end_pos);
+
+  void setCallbacks(IKSolverCallback ik_cb, DynamicsCallback dyn_cb);
+
+  void setRobotState(
+    const Eigen::VectorXd & q_init, const Eigen::Matrix3d & initial_swing_rotation);
 
   Eigen::MatrixXd optimizeTrajectory(
     const SolverParams & solver_params, const WeightParams & weight_params);
 
-  void setBoundaryConditions(const Eigen::Vector3d & start_pos, const Eigen::Vector3d & end_pos);
-
-  void setRobotState(
-    const Eigen::VectorXd & q_init, const std::string & swing_frame_name,
-    const std::vector<std::string> & swing_joint_names);
-
   Eigen::Vector3d computeBezierPosition(double t, const Eigen::MatrixXd & P) const;
+
   Eigen::Vector3d computeBezierVelocity(double t, const Eigen::MatrixXd & P) const;
 
 private:
+  double computeCost(const std::vector<double> & x);
+
   static double objectiveWrapper(
     const std::vector<double> & x, std::vector<double> & grad, void * data);
-
-  double computeCost(const std::vector<double> & x);
 
   SolverParams solver_params_;
   WeightParams weight_params_;
@@ -85,12 +90,11 @@ private:
   int num_joints_;
   int num_limbs_;
 
-  fbml::Kinematics * kinematics_;
-  fbml::Dynamics * dynamics_;
+  IKSolverCallback ik_callback_;
+  DynamicsCallback dynamics_callback_;
 
   Eigen::VectorXd q_init_;
-  std::string swing_frame_name_;
-  std::vector<std::string> swing_joint_names_;
+  Eigen::Matrix3d initial_swing_rotation_;  // TODO:
 };
 
 }  // namespace lrst

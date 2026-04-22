@@ -37,10 +37,43 @@ double nChoosek(int n, int k)
   return result;
 }
 
-LowReactionSwingTrajectory::LowReactionSwingTrajectory(
-  fbml::Kinematics * kinematics, fbml::Dynamics * dynamics, int num_joints, int num_limbs)
-: num_joints_(num_joints), num_limbs_(num_limbs), kinematics_(kinematics), dynamics_(dynamics)
+LowReactionSwingTrajectory::LowReactionSwingTrajectory(int num_joints, int num_limbs)
+: num_joints_(num_joints), num_limbs_(num_limbs)
 {
+}
+
+void LowReactionSwingTrajectory::setBoundaryConditions(
+  const Eigen::Vector3d & start_pos, const Eigen::Vector3d & end_pos)
+{
+  constexpr int kDof = 3;
+  bezier_base_matrix_ = Eigen::MatrixXd::Zero(kDof, bezier_order_ + 1);
+
+  // Constraints for start point
+  bezier_base_matrix_.col(0) = start_pos;
+  bezier_base_matrix_.col(1) = start_pos;
+  bezier_base_matrix_.col(2) = start_pos;
+
+  // Initialize mid-point constraints (subject to change during optimization)
+  bezier_base_matrix_.col(3) = start_pos;
+  bezier_base_matrix_.col(4) = end_pos;
+
+  // Constraints for end point
+  bezier_base_matrix_.col(5) = end_pos;
+  bezier_base_matrix_.col(6) = end_pos;
+  bezier_base_matrix_.col(7) = end_pos;
+}
+
+void LowReactionSwingTrajectory::setCallbacks(IKSolverCallback ik_cb, DynamicsCallback dyn_cb)
+{
+  ik_callback_ = std::move(ik_cb);
+  dynamics_callback_ = std::move(dyn_cb);
+}
+
+void LowReactionSwingTrajectory::setRobotState(
+  const Eigen::VectorXd & q_init, const Eigen::Matrix3d & initial_swing_rotation)
+{
+  q_init_ = q_init;
+  initial_swing_rotation_ = initial_swing_rotation;
 }
 
 Eigen::MatrixXd LowReactionSwingTrajectory::optimizeTrajectory(
@@ -97,49 +130,6 @@ Eigen::MatrixXd LowReactionSwingTrajectory::optimizeTrajectory(
   return P_opt;
 }
 
-void LowReactionSwingTrajectory::setBoundaryConditions(
-  const Eigen::Vector3d & start_pos, const Eigen::Vector3d & end_pos)
-{
-  constexpr int kDof = 3;
-  bezier_base_matrix_ = Eigen::MatrixXd::Zero(kDof, bezier_order_ + 1);
-
-  // Constraints for start point
-  bezier_base_matrix_.col(0) = start_pos;
-  bezier_base_matrix_.col(1) = start_pos;
-  bezier_base_matrix_.col(2) = start_pos;
-
-  // Initialize mid-point constraints (subject to change during optimization)
-  bezier_base_matrix_.col(3) = start_pos;
-  bezier_base_matrix_.col(4) = end_pos;
-
-  // Constraints for end point
-  bezier_base_matrix_.col(5) = end_pos;
-  bezier_base_matrix_.col(6) = end_pos;
-  bezier_base_matrix_.col(7) = end_pos;
-}
-
-void LowReactionSwingTrajectory::setRobotState(
-  const Eigen::VectorXd & q_init, const std::string & swing_frame_name,
-  const std::vector<std::string> & swing_joint_names)
-{
-  q_init_ = q_init;
-  swing_frame_name_ = swing_frame_name;
-  swing_joint_names_ = swing_joint_names;
-}
-
-double LowReactionSwingTrajectory::objectiveWrapper(
-  const std::vector<double> & x, std::vector<double> & grad, void * data)
-{
-  // In the case of algorithms that do not require gradients (LN_BOBYQA), grad is called in an empty state (no computation required).
-  if (!grad.empty()) {
-    // For algorithms that require a gradient (such as LD_SLSQP), you need to write code here to compute the numerical derivative yourself.
-  }
-
-  // Cast void pointer to instance of LowReactionSwingTrajectory and call actual calculation function
-  LowReactionSwingTrajectory * optimizer = static_cast<LowReactionSwingTrajectory *>(data);
-  return optimizer->computeCost(x);
-}
-
 Eigen::Vector3d LowReactionSwingTrajectory::computeBezierPosition(
   double t, const Eigen::MatrixXd & P) const
 {
@@ -172,6 +162,11 @@ Eigen::Vector3d LowReactionSwingTrajectory::computeBezierVelocity(
 
 double LowReactionSwingTrajectory::computeCost(const std::vector<double> & x)
 {
+  if (!ik_callback_ || !dynamics_callback_) {
+    std::cerr << "[LRST] Error: Callbacks are not set!" << std::endl;
+    return 1e9;
+  }
+
   // Complete the Bézier curve control point matrix P (3x8) using the optimization variable x (6 elements)
   Eigen::MatrixXd P = bezier_base_matrix_;
   P.col(3) = Eigen::Vector3d(x[0], x[1], x[2]);
@@ -192,8 +187,7 @@ double LowReactionSwingTrajectory::computeCost(const std::vector<double> & x)
   Eigen::VectorXd q_prev = q_init_;
   Eigen::VectorXd L_prev = Eigen::VectorXd::Zero(6);
 
-  pinocchio::SE3 initial_pose = kinematics_->solveFK(q_init_, swing_frame_name_);
-  Eigen::Matrix3d R_des = initial_pose.rotation();
+  Eigen::Matrix3d R_des = initial_swing_rotation_;
 
   // Discrete-time loop
   for (int i = 0; i < num_steps; ++i) {
@@ -206,12 +200,13 @@ double LowReactionSwingTrajectory::computeCost(const std::vector<double> & x)
     max_height = std::max(max_height, current_height);
     sum_height += current_height;
 
-    pinocchio::SE3 pose_des(R_des, x_des);  // Maintain rotation in the starting position
+    Eigen::Isometry3d pose_des = Eigen::Isometry3d::Identity();
+    pose_des.translation() = x_des;
+    pose_des.linear() = R_des;  // Maintain rotation in the starting position
 
     Eigen::VectorXd q = q_prev;
-    bool ik_success =
-      kinematics_->solveNumericalIK(q, swing_frame_name_, pose_des, swing_joint_names_);
 
+    bool ik_success = ik_callback_(q, pose_des);
     if (!ik_success) {
       return 1e9;  // High penalty for kinematic infeasible pose
     }
@@ -222,7 +217,7 @@ double LowReactionSwingTrajectory::computeCost(const std::vector<double> & x)
     }
 
     Eigen::MatrixXd H_b, H_bm;
-    dynamics_->computePartitionedMassMatrices(q, H_b, H_bm);
+    dynamics_callback_(q, H_b, H_bm);
 
     // HACK: Momentum of the swing limb
     Eigen::VectorXd L = H_bm * q_dot;
@@ -243,7 +238,7 @@ double LowReactionSwingTrajectory::computeCost(const std::vector<double> & x)
     L_prev = L;
   }
 
-  double mean_force = sum_force / (num_steps - 1);
+  // double mean_force = sum_force / (num_steps - 1);
   double mean_height = sum_height / num_steps;
 
   // === Costs ===
@@ -259,6 +254,19 @@ double LowReactionSwingTrajectory::computeCost(const std::vector<double> & x)
   double cost = force_cost + moment_cost + max_step_height_cost + ave_step_height_cost;
 
   return cost;
+}
+
+double LowReactionSwingTrajectory::objectiveWrapper(
+  const std::vector<double> & x, std::vector<double> & grad, void * data)
+{
+  // NOTE: In the case of algorithms that do not require gradients (LN_BOBYQA), grad is called in an empty state (no computation required).
+  if (!grad.empty()) {
+    // NOTE: For algorithms that require a gradient (such as LD_SLSQP), you need to write code here to compute the numerical derivative yourself.
+  }
+
+  // Cast void pointer to instance of LowReactionSwingTrajectory and call actual calculation function
+  LowReactionSwingTrajectory * optimizer = static_cast<LowReactionSwingTrajectory *>(data);
+  return optimizer->computeCost(x);
 }
 
 }  // namespace lrst
