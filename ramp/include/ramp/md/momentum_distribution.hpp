@@ -44,7 +44,8 @@ public:
   virtual ~MomentumDistribution() = default;
 
   /**
-   * @brief
+   * @brief Compute whole-body desired joint velocities considering momentum distribution
+   *        based on whole-body Jacobian and swing limb end-effector velocity
    *
    * @param H_b Base inertia matrix (6x6)
    * @param H_bm Coupling inertia matrix between base and joints (6 x num_joints)
