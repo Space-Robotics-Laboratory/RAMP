@@ -8,7 +8,6 @@
                 "/usr/include/eigen3",
                 "/usr/include/opencv4/",
                 "/usr/local/include/",
-                "/opt/openrobots/include/pinocchio/**",
                 "/opt/ros/humble/include/**",
                 "${workspaceFolder}/../../install/**"
             ],
