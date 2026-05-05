@@ -28,8 +28,6 @@ MomentumDistribution::MomentumDistribution(int num_joints, int num_limbs)
 {
   int max_rows = 6 * kNumLimbs_;
 
-  A_matrix_.resize(6, 6);
-
   int max_singular_values = std::min(kNumJoints_, max_rows);
   S_inv_buffer_.resize(max_singular_values);
 
@@ -49,31 +47,27 @@ VelocityCommand MomentumDistribution::computeVelocities(
   double max_lambda = dls_params.max_lambda;
   double epsilon = dls_params.epsilon;
 
+  Eigen::MatrixXd J_m_sup_pinv = computePseudoInverseAdaptiveDLS(J_m_support, max_lambda, epsilon);
   Eigen::MatrixXd J_m_sw_pinv = computePseudoInverseAdaptiveDLS(J_m_swing, max_lambda, epsilon);
 
-  // "Nominal" joint velocities of the swing limb
+  // Nominal joint velocities and momenta of the swing limb
   // HACK: Assuming the base is fixed
   Eigen::VectorXd dq_sw_nom = J_m_sw_pinv * v_swing_ee_des;
+  Eigen::Matrix<double, 6, 1> L_sw_nom = H_bm * dq_sw_nom;
 
-  // "Nominal" momenta of the swing limb
-  Eigen::VectorXd L_sw_nom = H_bm * dq_sw_nom;
+  // A = H_{b} - H_{bm} * J_{m_sup}^+ * J_{b_sup}
+  Eigen::Matrix<double, 6, 6> A = H_b - H_bm * J_m_sup_pinv * J_b_support;
 
-  // Modified base inertia matrix
-  // HACK: Take into account the coupled momentum of the swing limbs
-  Eigen::MatrixXd H_b_modified = H_b - alpha * H_bm * J_m_sw_pinv * J_b_swing;
+  // B = A - alpha H_{bm} * J_{m_sw}^+ * J_{b_sw}
+  Eigen::Matrix<double, 6, 6> B = A - alpha * H_bm * J_m_sw_pinv * J_b_swing;
 
-  Eigen::MatrixXd J_m_sup_pinv = computePseudoInverseAdaptiveDLS(J_m_support, max_lambda, epsilon);
-
-  // A = H_{b_modified} - H_{bm} * J_{m_sup}^+ * J_{b_sup}
-  A_matrix_ = H_b_modified - H_bm * J_m_sup_pinv * J_b_support;
-
-  // d{x}_b = -alpha * A^(-1) * L_{sw}
-  cmd.base_velocity = -alpha * A_matrix_.colPivHouseholderQr().solve(L_sw_nom);
+  // d{x}_b = -alpha * B^(-1) * L_{sw, nom}
+  cmd.base_velocity = -alpha * B.colPivHouseholderQr().solve(L_sw_nom);
 
   // d{q}_{sup} = -J_{m_sup}^+ * J_{b_sup} * d{x}_b
   Eigen::VectorXd dq_sup = -J_m_sup_pinv * J_b_support * cmd.base_velocity;
 
-  // "Actual" joint angular velocity of the swing limbs
+  // Actual joint angular velocity of the swing limbs
   Eigen::VectorXd dq_sw = J_m_sw_pinv * (v_swing_ee_des - J_b_swing * cmd.base_velocity);
 
   // Whole-body joint angular velocity vector

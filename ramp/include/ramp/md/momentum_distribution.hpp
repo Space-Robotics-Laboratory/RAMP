@@ -71,7 +71,6 @@ private:
   const int kNumJoints_;
   const int kNumLimbs_;
 
-  Eigen::MatrixXd A_matrix_;
   Eigen::VectorXd S_inv_buffer_;
   Eigen::JacobiSVD<Eigen::MatrixXd> svd_;
 };
