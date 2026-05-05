@@ -66,6 +66,6 @@ To cite LRST (Low-Reaction Swing Trajectory), please use the following BibTeX en
 
 ## Authors and Maintainers
 
-- [Masazumi Imai](https://masazumiimai.github.io/)
 - [Warley F. R. Ribeiro](https://www.ribeirowarley.com/)
+- [Masazumi Imai](https://masazumiimai.github.io/)
 - [Kentaro Uno](https://kentarouno.github.io/)
