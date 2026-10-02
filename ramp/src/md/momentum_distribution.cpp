@@ -43,21 +43,6 @@ MomentumDistribution::MomentumDistribution(int num_joints, int num_limbs)
   svd_.compute(svd_input_, Eigen::ComputeThinU | Eigen::ComputeThinV);
 }
 
-VelocityCommand MomentumDistribution::computeVelocities(
-  const Eigen::MatrixXd & H_b, const Eigen::MatrixXd & H_bm, const Eigen::MatrixXd & J_b_support,
-  const Eigen::MatrixXd & J_m_support, const Eigen::MatrixXd & J_b_swing,
-  const Eigen::MatrixXd & J_m_swing, const Eigen::VectorXd & v_swing_ee_des, double alpha,
-  const AdaptiveDLSParams & dls_params)
-{
-  VelocityCommand cmd;
-  cmd.base_velocity = Eigen::VectorXd::Zero(6);
-  cmd.joint_velocities = Eigen::VectorXd::Zero(kNumJoints_);
-  computeVelocities(
-    H_b, H_bm, J_b_support, J_m_support, J_b_swing, J_m_swing, v_swing_ee_des, alpha,
-    cmd.base_velocity, cmd.joint_velocities, dls_params);
-  return cmd;
-}
-
 void MomentumDistribution::computeVelocities(
   const Eigen::Ref<const Eigen::MatrixXd> & H_b, const Eigen::Ref<const Eigen::MatrixXd> & H_bm,
   const Eigen::Ref<const Eigen::MatrixXd> & J_b_support,
@@ -79,7 +64,7 @@ void MomentumDistribution::computeVelocities(
   computePseudoInverseAdaptiveDLS(J_m_swing, max_lambda, epsilon, J_m_sw_pinv);
 
   // Nominal joint velocities and momenta of the swing limb
-  // HACK: Assuming the base is fixed
+  // NOTE: Assuming the base is fixed
   swing_nominal_.noalias() = J_m_sw_pinv * v_swing_ee_des;
   const Eigen::Matrix<double, 6, 1> L_sw_nom = H_bm * swing_nominal_;
 

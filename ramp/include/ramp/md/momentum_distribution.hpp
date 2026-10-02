@@ -25,12 +25,6 @@ namespace ramp
 namespace md
 {
 
-struct VelocityCommand
-{
-  Eigen::VectorXd base_velocity;     // Base spatial velocity (6x1)
-  Eigen::VectorXd joint_velocities;  // Whole-body joint velocities (num_joints x 1)
-};
-
 struct AdaptiveDLSParams
 {
   double max_lambda = 0.1;
@@ -55,18 +49,11 @@ public:
    * @param J_m_swing Joint jacobian of swing limbs (6k2 x num_joints)
    * @param v_swing_ee_des Desired end-effector spatial velocity (6k2 x 1)
    * @param alpha Momentum distribution factor (0.0 ~ 1.0)
+   * @param base_velocity Output base spatial velocity (6x1)
+   * @param joint_velocities Output whole-body joint velocities (num_joints x 1)
    * @param dls_params Stabilization parameters for the pseudo-inverse matrix
-   * @return VelocityCommand Base velocity and joint angular velocities
-   */
-  VelocityCommand computeVelocities(
-    const Eigen::MatrixXd & H_b, const Eigen::MatrixXd & H_bm, const Eigen::MatrixXd & J_b_support,
-    const Eigen::MatrixXd & J_m_support, const Eigen::MatrixXd & J_b_swing,
-    const Eigen::MatrixXd & J_m_swing, const Eigen::VectorXd & v_swing_ee_des, double alpha = 1.0,
-    const AdaptiveDLSParams & dls_params = AdaptiveDLSParams());
-
-  /**
-   * @brief Same as above, writing into caller-owned outputs (6x1 and num_joints x 1).
-   *        Allocation-free once called with the same input sizes, for real-time loops.
+   *
+   * Allocation-free once called with the same input sizes, for real-time loops.
    */
   void computeVelocities(
     const Eigen::Ref<const Eigen::MatrixXd> & H_b, const Eigen::Ref<const Eigen::MatrixXd> & H_bm,

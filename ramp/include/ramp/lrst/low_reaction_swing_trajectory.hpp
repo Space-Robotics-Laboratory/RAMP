@@ -66,9 +66,10 @@ public:
 
   void setCouplingInertiaCallback(CouplingInertiaCallback coupling_inertia_cb);
 
+  // The swing EE orientation follows a minimum-jerk rotation from the initial to the final one.
   void setRobotState(
-    const Eigen::VectorXd & q_init,
-    const Eigen::Matrix3d & initial_swing_ee_orientation = Eigen::Matrix3d::Identity());
+    const Eigen::VectorXd & q_init, const Eigen::Matrix3d & initial_swing_ee_orientation,
+    const Eigen::Matrix3d & final_swing_ee_orientation);
 
   Eigen::MatrixXd optimizeTrajectory(
     const SolverParams & solver_params, const WeightParams & weight_params);
@@ -96,6 +97,7 @@ private:
 
   Eigen::VectorXd q_init_;
   Eigen::Matrix3d init_sw_ee_ori_;
+  Eigen::Matrix3d final_sw_ee_ori_;
 
   bool is_boundary_set_ = false;
   bool is_robot_state_set_ = false;
