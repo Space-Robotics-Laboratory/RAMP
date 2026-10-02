@@ -61,10 +61,12 @@ void LowReactionSwingTrajectory::setCouplingInertiaCallback(
 }
 
 void LowReactionSwingTrajectory::setRobotState(
-  const Eigen::VectorXd & q_init, const Eigen::Matrix3d & initial_swing_ee_orientation)
+  const Eigen::VectorXd & q_init, const Eigen::Matrix3d & initial_swing_ee_orientation,
+  const Eigen::Matrix3d & final_swing_ee_orientation)
 {
   q_init_ = q_init;
   init_sw_ee_ori_ = initial_swing_ee_orientation;
+  final_sw_ee_ori_ = final_swing_ee_orientation;
 
   is_robot_state_set_ = true;
 }
@@ -223,7 +225,7 @@ double LowReactionSwingTrajectory::computeCost(const std::vector<double> & x)
   Eigen::VectorXd q_prev = q_init_;
   Eigen::VectorXd L_prev = Eigen::VectorXd::Zero(6);
 
-  Eigen::Matrix3d R_des = init_sw_ee_ori_;
+  const Eigen::AngleAxisd rotation(init_sw_ee_ori_.transpose() * final_sw_ee_ori_);
 
   // Discrete-time loop
   for (int i = 0; i < num_steps; ++i) {
@@ -238,9 +240,14 @@ double LowReactionSwingTrajectory::computeCost(const std::vector<double> & x)
     max_height = std::max(max_height, current_height);
     sum_height += current_height;
 
+    // Minimum-jerk time scaling 10s^3 - 15s^4 + 6s^5
+    const double s = t / tf;
+    const double scale = s * s * s * (10.0 + s * (-15.0 + 6.0 * s));
+
     Eigen::Isometry3d pose_des = Eigen::Isometry3d::Identity();
     pose_des.translation() = x_des;
-    pose_des.linear() = R_des;  // Maintain rotation in the starting position
+    pose_des.linear() = init_sw_ee_ori_ *
+      Eigen::AngleAxisd(scale * rotation.angle(), rotation.axis()).toRotationMatrix();
 
     Eigen::VectorXd q = q_prev;
 
