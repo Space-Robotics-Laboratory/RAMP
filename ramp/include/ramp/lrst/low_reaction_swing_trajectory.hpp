@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Masazumi Imai
+// Copyright (c) 2026 Space Robotics Lab -- Tohoku University
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -49,10 +49,10 @@ struct WeightParams
 };
 
 using IKSolverCallback =
-  std::function<bool (Eigen::VectorXd & q, const Eigen::Isometry3d & pose_des)>;
+  std::function<bool(Eigen::VectorXd & q, const Eigen::Isometry3d & pose_des)>;
 
 using CouplingInertiaCallback =
-  std::function<void (const Eigen::VectorXd & q, Eigen::MatrixXd & H_bm)>;
+  std::function<void(const Eigen::VectorXd & q, Eigen::MatrixXd & H_bm)>;
 
 class RAMP_PUBLIC LowReactionSwingTrajectory
 {

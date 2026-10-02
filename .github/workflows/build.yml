@@ -23,7 +23,9 @@ jobs:
       - name: Install dependencies
         run: |
           apt-get update
-          apt-get install -y libeigen3-dev libnlopt-cxx-dev
+          apt-get install -y libeigen3-dev libnlopt-cxx-dev python3-pip ros-humble-ament-cmake-clang-format
+          # Match the clang-format version bundled with VS Code C/C++ extension
+          pip3 install clang-format==23.1.0
 
       - name: Build the package
         run: |

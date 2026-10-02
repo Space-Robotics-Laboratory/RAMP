@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Masazumi Imai
+// Copyright (c) 2026 Space Robotics Lab -- Tohoku University
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,8 +23,7 @@ namespace ramp
 namespace lrst
 {
 
-LowReactionSwingTrajectory::LowReactionSwingTrajectory(int num_joints)
-: kNumJoints_(num_joints)
+LowReactionSwingTrajectory::LowReactionSwingTrajectory(int num_joints) : kNumJoints_(num_joints)
 {
 }
 
@@ -78,7 +77,7 @@ Eigen::MatrixXd LowReactionSwingTrajectory::optimizeTrajectory(
   }
   if (!is_boundary_set_ || !is_robot_state_set_) {
     throw std::runtime_error(
-            "[LRST] Error: Boundary conditions or Robot state were not updated for this step!");
+      "[LRST] Error: Boundary conditions or Robot state were not updated for this step!");
   }
 
   std::cout << "[LRST] Optimizing trajectory..." << std::endl;
@@ -95,7 +94,7 @@ Eigen::MatrixXd LowReactionSwingTrajectory::optimizeTrajectory(
 
   // Initial optimization variable x0
   std::vector<double> initial_guess = {mid_pos.x(), mid_pos.y(), mid_pos.z(),
-    mid_pos.x(), mid_pos.y(), mid_pos.z()};
+                                       mid_pos.x(), mid_pos.y(), mid_pos.z()};
 
   unsigned int num_vars = initial_guess.size();
 

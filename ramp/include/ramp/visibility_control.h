@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Masazumi Imai
+// Copyright (c) 2026 Space Robotics Lab -- Tohoku University
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
