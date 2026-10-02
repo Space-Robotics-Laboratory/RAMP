@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Masazumi Imai
+// Copyright (c) 2026 Space Robotics Lab -- Tohoku University
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -64,15 +64,40 @@ public:
     const Eigen::MatrixXd & J_m_swing, const Eigen::VectorXd & v_swing_ee_des, double alpha = 1.0,
     const AdaptiveDLSParams & dls_params = AdaptiveDLSParams());
 
+  /**
+   * @brief Same as above, writing into caller-owned outputs (6x1 and num_joints x 1).
+   *        Allocation-free once called with the same input sizes, for real-time loops.
+   */
+  void computeVelocities(
+    const Eigen::Ref<const Eigen::MatrixXd> & H_b, const Eigen::Ref<const Eigen::MatrixXd> & H_bm,
+    const Eigen::Ref<const Eigen::MatrixXd> & J_b_support,
+    const Eigen::Ref<const Eigen::MatrixXd> & J_m_support,
+    const Eigen::Ref<const Eigen::MatrixXd> & J_b_swing,
+    const Eigen::Ref<const Eigen::MatrixXd> & J_m_swing,
+    const Eigen::Ref<const Eigen::VectorXd> & v_swing_ee_des, double alpha,
+    Eigen::Ref<Eigen::VectorXd> base_velocity, Eigen::Ref<Eigen::VectorXd> joint_velocities,
+    const AdaptiveDLSParams & dls_params = AdaptiveDLSParams());
+
 private:
-  Eigen::MatrixXd computePseudoInverseAdaptiveDLS(
-    const Eigen::MatrixXd & J, double max_lambda, double epsilon);
+  // Writes J^+ into J_pinv (cols x rows of J).
+  void computePseudoInverseAdaptiveDLS(
+    const Eigen::Ref<const Eigen::MatrixXd> & J, double max_lambda, double epsilon,
+    Eigen::Ref<Eigen::MatrixXd> J_pinv);
 
   const int kNumJoints_;
   const int kNumLimbs_;
 
+  // --- Preallocated workspaces (sized for 6 * num_limbs rows) ---
   Eigen::VectorXd S_inv_buffer_;
   Eigen::JacobiSVD<Eigen::MatrixXd> svd_;
+  Eigen::MatrixXd svd_input_;           // copy of J: JacobiSVD::compute takes a MatrixXd
+  Eigen::MatrixXd scaled_u_;            // U * S_inv
+  Eigen::MatrixXd support_pinv_;        // J_m_support^+
+  Eigen::MatrixXd swing_pinv_;          // J_m_swing^+
+  Eigen::VectorXd swing_nominal_;       // dq_sw,nom
+  Eigen::VectorXd swing_residual_;      // v_sw,des - J_b_sw * dx_b
+  Eigen::VectorXd support_motion_;      // J_b_sup * dx_b
+  Eigen::MatrixXd pinv_base_jacobian_;  // J_m^+ * J_b, num_joints x 6
 };
 
 }  // namespace md
